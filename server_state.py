@@ -2,7 +2,7 @@ import threading
 import socket
 import queue
 import time
-import pygame
+import os
 
 
 class _ChatHost:
@@ -137,6 +137,9 @@ class ChatServerState:
 	- Phase 2: Chat UI; Enter to send; ESC to go back
 	"""
 	def __init__(self, game, host='127.0.0.1', port=5678):
+		# Import pygame only when the UI state is actually used,
+		# so headless server runs do not require pygame installed.
+		import pygame  # local import to avoid hard dependency for server-only
 		self.game = game
 		self.host = host
 		self.port = int(port)
@@ -166,6 +169,7 @@ class ChatServerState:
 			self.messages = self.messages[-self.max_messages:]
 
 	def handle_event(self, event):
+		import pygame  # local import since this path uses pygame
 		if event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE:
 				# Leave and cleanup
@@ -240,6 +244,7 @@ class ChatServerState:
 			pass
 
 	def draw(self, screen):
+		import pygame  # local import since this path uses pygame
 		screen.fill((16, 18, 22))
 		w, h = screen.get_size()
 		pad = 16
@@ -320,8 +325,10 @@ def main(host='127.0.0.1', port=5678):
 if __name__ == '__main__':
 	import argparse
 	parser = argparse.ArgumentParser(description='Servidor headless de relay de chat')
-	parser.add_argument('--host', default='127.0.0.1', help='Dirección de bind (default: 127.0.0.1)')
-	parser.add_argument('--port', type=int, default=5678, help='Puerto TCP (default: 5678)')
+	default_host = os.getenv('HOST', '0.0.0.0')
+	default_port = int(os.getenv('PORT', '5678'))
+	parser.add_argument('--host', default=default_host, help=f'Dirección de bind (default: {default_host})')
+	parser.add_argument('--port', type=int, default=default_port, help=f'Puerto TCP (default: {default_port})')
 	args = parser.parse_args()
 	main(host=args.host, port=args.port)
 
