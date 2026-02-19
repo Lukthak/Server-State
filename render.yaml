@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: game22-public-server
+    env: python
+    plan: free
+    rootDir: server
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: SNAPSHOT_RATE
+        value: 20
+      - key: MAX_MOVE_PER_INPUT
+        value: 8
