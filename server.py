@@ -27,6 +27,7 @@ class PlayerState:
     y: float = 100.0
     hp: int = 100
     mana: int = 100
+    name: str = 'Player'
 
 
 @dataclass
@@ -85,8 +86,8 @@ def create_room_with_pair(a: WebSocketServerProtocol, b: WebSocketServerProtocol
     room.players[p1.player_id] = p1
     room.players[p2.player_id] = p2
 
-    room.state['players'][p1.player_id] = PlayerState(x=180, y=300).__dict__.copy()
-    room.state['players'][p2.player_id] = PlayerState(x=620, y=300).__dict__.copy()
+    room.state['players'][p1.player_id] = PlayerState(x=180, y=300, name='P1').__dict__.copy()
+    room.state['players'][p2.player_id] = PlayerState(x=620, y=300, name='P2').__dict__.copy()
 
     player_index[a] = p1
     player_index[b] = p2
@@ -164,6 +165,16 @@ def apply_input(room: Room, player_id: str, msg: Dict):
     p['y'] = max(0.0, min(5000.0, float(p.get('y', 0.0)) + dy))
 
 
+def apply_name(room: Room, player_id: str, msg: Dict):
+    p = room.state.get('players', {}).get(player_id)
+    if not p:
+        return
+    nm = str(msg.get('name', '')).strip()
+    if not nm:
+        return
+    p['name'] = nm[:16]
+
+
 async def ws_handler(ws: WebSocketServerProtocol):
     await safe_send(ws, {
         'type': 'queue_joined',
@@ -196,6 +207,8 @@ async def ws_handler(ws: WebSocketServerProtocol):
 
             if t == 'input':
                 apply_input(room, conn.player_id, msg)
+            elif t == 'set_name':
+                apply_name(room, conn.player_id, msg)
     finally:
         await remove_client(ws)
 
